@@ -1,8 +1,7 @@
+/*! echo.js v1.6.0 | (c) 2014 @toddmotto | https://github.com/echo */
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define(function() {
-      return factory(root);
-    });
+    define(factory);
   } else if (typeof exports === 'object') {
     module.exports = factory;
   } else {
@@ -16,25 +15,23 @@
 
   var callback = function () {};
 
-  var offset, poll, delay, useDebounce, unload;
+  var offset, poll, throttle, unload;
 
   var inView = function (element, view) {
     var box = element.getBoundingClientRect();
     return (box.right >= view.l && box.bottom >= view.t && box.left <= view.r && box.top <= view.b);
   };
 
-  var debounceOrThrottle = function () {
-    if(!useDebounce && !!poll) {
-      return;
-    }
+  var debounce = function () {
     clearTimeout(poll);
-    poll = setTimeout(function(){
-      echo.render();
-      poll = null;
-    }, delay);
+    poll = setTimeout(echo.render, throttle);
   };
 
+  echo.isInitialized = false;
+
   echo.init = function (opts) {
+    echo.isInitialized = true;
+
     opts = opts || {};
     var offsetAll = opts.offset || 0;
     var offsetVertical = opts.offsetVertical || offsetAll;
@@ -48,22 +45,15 @@
       l: optionToInt(opts.offsetLeft, offsetHorizontal),
       r: optionToInt(opts.offsetRight, offsetHorizontal)
     };
-    delay = optionToInt(opts.throttle, 250);
-    useDebounce = opts.debounce !== false;
+    throttle = optionToInt(opts.throttle, 250);
     unload = !!opts.unload;
     callback = opts.callback || callback;
     echo.render();
-    if (document.addEventListener) {
-      root.addEventListener('scroll', debounceOrThrottle, false);
-      root.addEventListener('load', debounceOrThrottle, false);
-    } else {
-      root.attachEvent('onscroll', debounceOrThrottle);
-      root.attachEvent('onload', debounceOrThrottle);
-    }
+    echo.attach();
   };
 
   echo.render = function () {
-    var nodes = document.querySelectorAll('img[data-echo], [data-echo-background]');
+    var nodes = document.querySelectorAll('img[data-echo]');
     var length = nodes.length;
     var src, elem;
     var view = {
@@ -75,33 +65,16 @@
     for (var i = 0; i < length; i++) {
       elem = nodes[i];
       if (inView(elem, view)) {
-
         if (unload) {
           elem.setAttribute('data-echo-placeholder', elem.src);
         }
-
-        if (elem.getAttribute('data-echo-background') !== null) {
-          elem.style.backgroundImage = "url(" + elem.getAttribute('data-echo-background') + ")";
-        }
-        else {
-          elem.src = elem.getAttribute('data-echo');
-        }
-
+        elem.src = elem.getAttribute('data-echo');
         if (!unload) {
           elem.removeAttribute('data-echo');
         }
-
         callback(elem, 'load');
-      }
-      else if (unload && !!(src = elem.getAttribute('data-echo-placeholder'))) {
-
-        if (elem.getAttribute('data-echo-background') !== null) {
-          elem.style.backgroundImage = "url(" + src + ")";
-        }
-        else {
-          elem.src = src;
-        }
-
+      } else if (unload && !!(src = elem.getAttribute('data-echo-placeholder'))) {
+        elem.src = src;
         elem.removeAttribute('data-echo-placeholder');
         callback(elem, 'unload');
       }
@@ -111,11 +84,21 @@
     }
   };
 
+  echo.attach = function() {
+    if (document.addEventListener) {
+      root.addEventListener('scroll', debounce, false);
+      root.addEventListener('load', debounce, false);
+    } else {
+      root.attachEvent('onscroll', debounce);
+      root.attachEvent('onload', debounce);
+    }
+  };
+
   echo.detach = function () {
     if (document.removeEventListener) {
-      root.removeEventListener('scroll', debounceOrThrottle);
+      root.removeEventListener('scroll', debounce);
     } else {
-      root.detachEvent('onscroll', debounceOrThrottle);
+      root.detachEvent('onscroll', debounce);
     }
     clearTimeout(poll);
   };
