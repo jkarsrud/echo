@@ -23,8 +23,6 @@
     return (box.right >= view.l && box.bottom >= view.t && box.left <= view.r && box.top <= view.b);
   };
 
-
-
   var debounce = function () {
     clearTimeout(poll);
     poll = setTimeout(echo.render, throttle);
@@ -34,7 +32,7 @@
 
   echo.init = function (opts) {
     echo.isInitialized = true;
-    console.log('echo init called');
+
     opts = opts || {};
     var offsetAll = opts.offset || 0;
     var offsetVertical = opts.offsetVertical || offsetAll;
@@ -58,7 +56,6 @@
   echo.render = function () {
     var nodes = document.querySelectorAll('img[data-echo]');
     var length = nodes.length;
-    console.log('render node length:', length);
     var src, elem;
     var view = {
       l: 0 - offset.l,
