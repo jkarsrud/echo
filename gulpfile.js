@@ -5,7 +5,7 @@ var gulp    = require('gulp'),
     header  = require('gulp-header'),
     uglify  = require('gulp-uglify'),
     plumber = require('gulp-plumber'),
-    clean   = require('gulp-clean'),
+    clean   = require('gulp-rimraf'),
     rename  = require('gulp-rename'),
     package = require('./package.json');
 
